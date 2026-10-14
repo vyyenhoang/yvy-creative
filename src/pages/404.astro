@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/utils';
+---
+
+<Base title="Page not found">
+  <section class="wrap section nf">
+    <p class="eyebrow">404</p>
+    <h1 class="display">Lost the <em>thread.</em></h1>
+    <p class="lead">This page doesn’t exist — but the work does.</p>
+    <a class="btn btn-solid" href={url('/#work')}>Back to the work <span class="arrow">↗</span></a>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    display: grid;
+    gap: 28px;
+    justify-items: start;
+    min-height: 70vh;
+    align-content: center;
+  }
+  .nf em {
+    color: var(--accent);
+  }
+</style>

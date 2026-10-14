@@ -1,0 +1,160 @@
+---
+import { Image } from 'astro:assets';
+import type { MediaItem } from '../lib/media';
+
+/**
+ * Project cover. Uses projects/<slug>/cover.* when it exists, otherwise draws
+ * a typographic poster in the client's brand colour so nothing ever looks empty.
+ */
+interface Props {
+  title: string;
+  category: string;
+  year: string;
+  index: number;
+  cover?: MediaItem;
+  logo?: MediaItem;
+  sizes: string;
+  eager?: boolean;
+  big?: boolean;
+}
+
+const { title, category, year, index, cover, logo, sizes, eager = false, big = false } = Astro.props;
+const words = title.split(' ');
+const maxW = cover?.kind === 'image' ? Math.min(cover.image.width, 2560) : 0;
+const widths = [...[640, 960, 1280, 1920].filter((w) => w < maxW), maxW];
+---
+
+{
+  cover?.kind === 'image' ? (
+    <div class="cover">
+      <Image
+        src={cover.image}
+        alt={`${title} — cover`}
+        widths={widths}
+        sizes={sizes}
+        quality={84}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+      />
+    </div>
+  ) : cover?.kind === 'file' ? (
+    <div class="cover">
+      <img src={cover.src} alt={`${title} — cover`} loading={eager ? 'eager' : 'lazy'} />
+    </div>
+  ) : (
+    <div class:list={['cover', 'type-cover', big && 'big']} role="img" aria-label={`${title} — ${category}`}>
+      <span class="tc-ring" aria-hidden="true" />
+      <span class="tc-ring two" aria-hidden="true" />
+      <div class="tc-top">
+        <span>Case {String(index).padStart(2, '0')}</span>
+        <span>{year}</span>
+      </div>
+      <div class="tc-title" aria-hidden="true">
+        {words.map((w) => (
+          <span>{w}</span>
+        ))}
+      </div>
+      <div class="tc-bottom">
+        <span>{category}</span>
+        {logo &&
+          (logo.kind === 'image' ? (
+            <span class="tc-logo">
+              <Image src={logo.image} alt="" width={160} />
+            </span>
+          ) : logo.kind === 'file' ? (
+            <span class="tc-logo">
+              <img src={logo.src} alt="" />
+            </span>
+          ) : null)}
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .cover {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--brand);
+  }
+  .cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1s var(--ease);
+  }
+  .type-cover {
+    color: var(--on-brand);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(18px, 2.4vw, 32px);
+    container-type: inline-size;
+    isolation: isolate;
+  }
+  .tc-top,
+  .tc-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    position: relative;
+  }
+  .tc-title {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 13.5cqi;
+    line-height: 0.86;
+    letter-spacing: -0.055em;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .big .tc-title {
+    font-size: 11cqi;
+  }
+  .tc-title span:nth-child(even) {
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    padding-left: 0.4em;
+  }
+  .tc-ring {
+    position: absolute;
+    z-index: -1;
+    width: 78cqi;
+    aspect-ratio: 1;
+    right: -22cqi;
+    top: -18cqi;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.22;
+  }
+  .tc-ring.two {
+    width: 52cqi;
+    right: -9cqi;
+    top: -5cqi;
+    background: currentColor;
+    opacity: 0.07;
+  }
+  .tc-logo {
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tc-logo :global(img) {
+    height: 22px;
+    width: auto;
+    object-fit: contain;
+  }
+</style>

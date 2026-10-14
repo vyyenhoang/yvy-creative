@@ -1,0 +1,60 @@
+---
+import Media from './Media.astro';
+import { compareLabel, prettify, type MediaItem } from '../lib/media';
+
+interface Props {
+  items: MediaItem[];
+  layout: string;
+  columns?: number;
+  group: string;
+  alt: string;
+  captions?: boolean;
+}
+
+const { items, layout, columns, group, alt, captions = false } = Astro.props;
+
+const fit = ['feed', 'phone', 'bento'].includes(layout);
+
+// Before/after: pair files by name (before-01 + after-01) and always show Before first.
+const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+const rank = (name: string) => ({ Before: 0, After: 2 })[compareLabel(name) ?? ''] ?? 1;
+const pairKey = (name: string) => name.replace(/(^|[-_\s])(before|after|old|new)(?=[-_\s]|$)/i, '$1');
+const ordered =
+  layout === 'compare'
+    ? [...items].sort((a, b) => collator.compare(pairKey(a.name), pairKey(b.name)) || rank(a.name) - rank(b.name))
+    : items;
+const sizesFor = (i: number) => {
+  switch (layout) {
+    case 'wide':
+      return '(min-width: 1480px) 1380px, 94vw';
+    case 'duo':
+    case 'compare':
+      return '(min-width: 900px) 46vw, 94vw';
+    case 'feed':
+      return '(min-width: 960px) 23vw, (min-width: 560px) 31vw, 47vw';
+    case 'phone':
+      return '290px';
+    case 'strip':
+      return '(min-width: 900px) 40vw, 80vw';
+    case 'bento':
+      return i === 0 ? '(min-width: 960px) 48vw, 94vw' : '(min-width: 960px) 24vw, 47vw';
+    default: // masonry, trio
+      return '(min-width: 960px) 31vw, (min-width: 560px) 47vw, 94vw';
+  }
+};
+---
+
+<div class:list={['gallery', `g-${layout}`]} style={columns ? `--cols:${columns}` : undefined}>
+  {
+    ordered.map((item, i) => {
+      const tag = layout === 'compare' ? compareLabel(item.name) : undefined;
+      return (
+        <figure class="g-item" data-reveal style={`--d:${Math.min(i % 8, 6) * 0.05}s`}>
+          {tag && <span class:list={['g-tag', tag === 'After' && 'after']}>{tag}</span>}
+          <Media item={item} alt={`${alt} — ${i + 1}`} sizes={sizesFor(i)} group={group} fit={fit} />
+          {captions && <figcaption>{prettify(item.name)}</figcaption>}
+        </figure>
+      );
+    })
+  }
+</div>

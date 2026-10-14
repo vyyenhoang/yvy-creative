@@ -1,0 +1,29 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+
+# environment
+.env
+.env.*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# design source files — keep the heavy originals out of git (export JPG/PNG/MP4 instead)
+*.psd
+*.ai
+*.aep
+*.prproj
+*.fig
+*.indd

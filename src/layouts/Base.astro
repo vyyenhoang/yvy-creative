@@ -1,0 +1,196 @@
+---
+import '../styles/global.css';
+import { site } from '../site.config';
+import { url } from '../lib/utils';
+
+interface Props {
+  title?: string;
+  description?: string;
+  brand?: string;
+  onBrand?: string;
+  image?: string;
+}
+
+const { title, description = site.description, brand, onBrand, image } = Astro.props;
+const fullTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const style = brand ? `--brand:${brand};--on-brand:${onBrand ?? '#f6f2ea'}` : undefined;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en" class="no-js" style={style}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+    <meta name="theme-color" content="#f4f0e8" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap"
+    />
+    <script is:inline>
+      document.documentElement.classList.remove('no-js');
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header" id="top">
+      <div class="wrap">
+        <a class="logo" href={url('/')} aria-label={`${site.name} — home`}>
+          {site.short}<span class="logo-star" aria-hidden="true">✳</span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a href={url('/#work')}>Work</a>
+          <a class="hide-sm" href={url('/#about')}>About</a>
+          <a class="hide-sm" href={site.resume} target="_blank" rel="noopener">Résumé</a>
+          <a class="btn btn-solid" href={url('/#contact')}>Let’s talk <span class="arrow">↗</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>© {year} {site.name} · {site.location}</span>
+        <div class="footer-links">
+          <a href={`mailto:${site.email}`}>Email</a>
+          {site.links.map((l) => <a href={l.url} target="_blank" rel="noopener">{l.label}</a>)}
+          <a href="#top">Back to top ↑</a>
+        </div>
+      </div>
+    </footer>
+
+    <dialog class="lightbox" aria-label="Image viewer">
+      <img alt="" />
+      <button class="lb-btn lb-close" type="button" aria-label="Close">✕</button>
+      <button class="lb-btn lb-prev" type="button" aria-label="Previous">←</button>
+      <button class="lb-btn lb-next" type="button" aria-label="Next">→</button>
+      <span class="lb-count"></span>
+    </dialog>
+
+    <script>
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Header background once the page scrolls
+      const header = document.querySelector('.site-header');
+      const onScroll = () => header?.classList.toggle('scrolled', scrollY > 12);
+      onScroll();
+      addEventListener('scroll', onScroll, { passive: true });
+
+      // Reveal on scroll
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        },
+        { rootMargin: '0px 0px -8% 0px' },
+      );
+      // Anything already on screen animates in right away; the rest waits for scroll.
+      setTimeout(() => {
+        document.querySelectorAll('[data-reveal]').forEach((el) => {
+          if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in');
+          else io.observe(el);
+        });
+      }, 40);
+
+      // Count-up numbers: "11K+", "$15,000", "+25%"
+      const counters = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            counters.unobserve(e.target);
+            const el = e.target as HTMLElement;
+            const raw = el.dataset.count ?? '';
+            const m = raw.match(/^(\D*?)(\d[\d,]*\.?\d*)(.*)$/);
+            if (!m || reduce) continue;
+            const [, pre, num, post] = m;
+            const target = parseFloat(num.replace(/,/g, ''));
+            if (target < 10) continue; // "1st", "3+" — nothing to animate
+            const decimals = (num.split('.')[1] ?? '').length;
+            const commas = num.includes(',');
+            const t0 = performance.now();
+            const dur = 1400;
+            const tick = (t: number) => {
+              const p = Math.min(1, (t - t0) / dur);
+              const v = target * (1 - Math.pow(1 - p, 3));
+              let s = v.toFixed(decimals);
+              if (commas) s = Number(s).toLocaleString('en-US', { minimumFractionDigits: decimals });
+              el.textContent = pre + s + post;
+              if (p < 1) requestAnimationFrame(tick);
+              else el.textContent = raw;
+            };
+            requestAnimationFrame(tick);
+          }
+        },
+        { threshold: 0.6 },
+      );
+      document.querySelectorAll('[data-count]').forEach((el) => counters.observe(el));
+
+      // Videos play only while on screen
+      const vids = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          const v = e.target as HTMLVideoElement;
+          if (e.isIntersecting && !reduce) v.play().catch(() => {});
+          else v.pause();
+        }
+      });
+      document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => {
+        vids.observe(v);
+        v.addEventListener('click', () => (v.muted = !v.muted));
+      });
+
+      // Lightbox — groups images per chapter so arrows stay inside one set
+      const dlg = document.querySelector<HTMLDialogElement>('.lightbox')!;
+      const dImg = dlg.querySelector('img')!;
+      const count = dlg.querySelector('.lb-count')!;
+      let set: HTMLAnchorElement[] = [];
+      let idx = 0;
+      const show = (i: number) => {
+        idx = (i + set.length) % set.length;
+        const a = set[idx];
+        dImg.src = a.href;
+        dImg.alt = a.querySelector('img')?.alt ?? '';
+        count.textContent = set.length > 1 ? `${idx + 1} / ${set.length}` : '';
+      };
+      document.addEventListener('click', (ev) => {
+        const a = (ev.target as Element).closest<HTMLAnchorElement>('a[data-lb]');
+        if (!a || ev.metaKey || ev.ctrlKey) return;
+        ev.preventDefault();
+        set = [...document.querySelectorAll<HTMLAnchorElement>(`a[data-lb="${a.dataset.lb}"]`)];
+        show(set.indexOf(a));
+        dlg.showModal();
+      });
+      dlg.querySelector('.lb-close')!.addEventListener('click', () => dlg.close());
+      dlg.querySelector('.lb-prev')!.addEventListener('click', () => show(idx - 1));
+      dlg.querySelector('.lb-next')!.addEventListener('click', () => show(idx + 1));
+      dlg.addEventListener('click', (ev) => {
+        if (ev.target === dlg) dlg.close();
+      });
+      dlg.addEventListener('keydown', (ev) => {
+        if (ev.key === 'ArrowLeft') show(idx - 1);
+        if (ev.key === 'ArrowRight') show(idx + 1);
+      });
+      dlg.addEventListener('close', () => dImg.removeAttribute('src'));
+    </script>
+  </body>
+</html>

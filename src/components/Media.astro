@@ -1,0 +1,55 @@
+---
+import { Image, getImage } from 'astro:assets';
+import type { MediaItem } from '../lib/media';
+
+interface Props {
+  item: MediaItem;
+  alt: string;
+  sizes: string;
+  group?: string; // lightbox set
+  fit?: boolean; // crop to the container (feed / phone / bento)
+  eager?: boolean;
+}
+
+const { item, alt, sizes, group, fit = false, eager = false } = Astro.props;
+const STEPS = [480, 720, 1080, 1440, 1920, 2400];
+
+let widths: number[] = [];
+let full: string | undefined;
+if (item.kind === 'image') {
+  const max = Math.min(item.image.width, 2400);
+  widths = [...STEPS.filter((w) => w < max), max];
+  full = (await getImage({ src: item.image, width: max, format: 'webp', quality: 86 })).src;
+}
+const cls = ['media', fit && 'fit'];
+---
+
+{
+  item.kind === 'image' && (
+    <a class:list={cls} href={full} data-lb={group}>
+      <Image
+        src={item.image}
+        alt={alt}
+        widths={widths}
+        sizes={sizes}
+        quality={82}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+      />
+    </a>
+  )
+}
+{
+  item.kind === 'file' && (
+    <a class:list={cls} href={item.src} data-lb={group}>
+      <img src={item.src} alt={alt} loading={eager ? 'eager' : 'lazy'} />
+    </a>
+  )
+}
+{
+  item.kind === 'video' && (
+    <div class:list={cls}>
+      <video src={item.src} muted loop playsinline preload="metadata" data-autoplay aria-label={alt} title="Click to toggle sound" />
+    </div>
+  )
+}

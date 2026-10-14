@@ -1,0 +1,16 @@
+{
+  "name": "creative-portfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hoang Y Vy Nguyen — creative portfolio: branding, creative design, social media & content.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "new": "node scripts/new-project.mjs"
+  },
+  "dependencies": {
+    "astro": "7.3.5"
+  }
+}
