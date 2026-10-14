@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config';
 // SITE_URL / BASE_PATH are filled in automatically by the GitHub Pages workflow
 // (.github/workflows/deploy.yml). Locally the site runs at http://localhost:4321/.
 export default defineConfig({
-  site: process.env.SITE_URL || 'https://yvy0405.github.io',
+  site: process.env.SITE_URL || 'https://vyyenhoang.github.io',
   base: process.env.BASE_PATH || '/',
   devToolbar: { enabled: false },
   image: {
