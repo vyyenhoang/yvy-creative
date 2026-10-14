@@ -27,3 +27,6 @@ desktop.ini
 *.prproj
 *.fig
 *.indd
+
+# local Claude Code preview config
+.claude/
